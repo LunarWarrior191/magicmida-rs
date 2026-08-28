@@ -1,0 +1,33 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: windows-latest  # 🔧 改为 Windows
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust (MSVC)
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-pc-windows-msvc
+        override: true
+    
+    - name: Build
+      run: cargo build --release --verbose
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mida-cli
+        path: target/release/mida-cli.exe
