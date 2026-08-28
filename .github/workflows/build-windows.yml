@@ -1,0 +1,48 @@
+# .github/workflows/build-windows.yml
+name: Build Windows
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    # 核心修复：必须使用 Windows 运行器
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v4
+
+    # 推荐使用 dtolnay/rust-toolchain 来安装 Rust，它稳定且功能更全[citation:11]
+    - name: 安装 Rust 工具链 (MSVC)
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        # 明确指定 MSVC 目标，这是 Windows 上开发的首选[citation:1][citation:3]
+        targets: x86_64-pc-windows-msvc
+
+    # 使用 actions/cache 加速后续构建，缓存 cargo 的依赖和构建产物[citation:4]
+    - name: 缓存 cargo 依赖
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: 构建项目 (Release 模式)
+      run: cargo build --release --verbose
+
+    # 上传构建好的 exe 作为工作流产物 (Artifact)，方便你下载使用
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: mida-cli
+        path: target/release/mida-cli.exe
